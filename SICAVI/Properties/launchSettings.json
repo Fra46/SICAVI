@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SICAVI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SICAVI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

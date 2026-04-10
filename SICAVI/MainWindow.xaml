@@ -1,0 +1,22 @@
+<Window
+    x:Class="SICAVI.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <NavigationView x:Name="NavView" IsBackButtonVisible="Collapsed">
+
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Dashboard" Tag="dashboard" Icon="Home"/>
+            <NavigationViewItem Content="Ventas" Tag="ventas" Icon="Shop"/>
+            <NavigationViewItem Content="Inventario" Tag="inventario" Icon="AllApps"/>
+            <NavigationViewItem Content="Facturación" Tag="facturacion" Icon="Page"/>
+            <NavigationViewItem Content="ChatBot IA" Tag="chatbot" Icon="Message"/>
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="ContentFrame"/>
+
+    </NavigationView>
+</Window>
