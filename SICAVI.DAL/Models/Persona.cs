@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace SICAVI.WinUI.Models
+namespace SICAVI.DAL.Models
 {
     public abstract partial class Persona : ObservableObject
     {

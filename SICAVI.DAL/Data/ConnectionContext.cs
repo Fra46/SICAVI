@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SICAVI.WinUI.Models;
+using SICAVI.DAL.Models;
 
-namespace SICAVI.WinUI.Data
+namespace SICAVI.DAL.Data
 {
     public class ConnectionContext : DbContext
     {
@@ -11,5 +11,8 @@ namespace SICAVI.WinUI.Data
         }
 
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<Venta> Ventas { get; set; }
+        public DbSet<DetalleVenta> DetallesVenta { get; set; }
     }
 }

@@ -1,17 +1,17 @@
-﻿using SICAVI.WinUI.Data;
-using SICAVI.WinUI.Models;
+﻿using SICAVI.DAL.Data;
+using SICAVI.DAL.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace SICAVI.WinUI.Services
+namespace SICAVI.DAL.Services
 {
     public class ProductoService
     {
         private readonly ConnectionContext _context;
 
-        internal ProductoService(ConnectionContext context)
+        public ProductoService(ConnectionContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }

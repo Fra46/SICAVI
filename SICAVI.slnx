@@ -4,6 +4,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="SICAVI.DAL/SICAVI.DAL.csproj" Id="328be712-32a6-4fb5-b2f8-f7062ec5f1ec" />
   <Project Path="SICAVI/SICAVI.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />

@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 
-namespace SICAVI.WinUI.Models
+namespace SICAVI.DAL.Models
 {
     public partial class Cliente : Persona
     {

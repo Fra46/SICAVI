@@ -1,10 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using SICAVI.WinUI.Models;
-using SICAVI.WinUI.Services;
+using SICAVI.DAL.Models;
+using SICAVI.DAL.Services;
 using Microsoft.Extensions.DependencyInjection;
-using SICAVI.WinUI.Data;
+using SICAVI.DAL.Data;
 
 namespace SICAVI.WinUI.ViewModels
 {

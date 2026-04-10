@@ -58,7 +58,6 @@ public class ProductoViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
         }
     }
 
-    // 🔴 Validaciones
     private void ValidateCodigo()
     {
         ClearErrors(nameof(Codigo));
@@ -87,7 +86,6 @@ public class ProductoViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
             AddError(nameof(Stock), "No puede ser negativo");
     }
 
-    // 🔧 Manejo de errores
     public bool HasErrors => _errors.Count > 0;
 
     public IEnumerable GetErrors(string propertyName)

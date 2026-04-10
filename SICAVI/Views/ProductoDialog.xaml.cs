@@ -1,5 +1,5 @@
 using Microsoft.UI.Xaml.Controls;
-using SICAVI.WinUI.Models;
+using SICAVI.DAL.Models;
 using System;
 
 namespace SICAVI.WinUI.Views

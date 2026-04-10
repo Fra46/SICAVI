@@ -1,4 +1,4 @@
-﻿using SICAVI.WinUI.Models;
+﻿using SICAVI.DAL.Models;
 
 public class ConfiguracionService
 {

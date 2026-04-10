@@ -2,7 +2,7 @@
 using System;
 using System.Collections.ObjectModel;
 
-namespace SICAVI.WinUI.Models
+namespace SICAVI.DAL.Models
 {
     public partial class Venta : ObservableObject
     {

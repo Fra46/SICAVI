@@ -1,8 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace SICAVI.WinUI.Models
+namespace SICAVI.DAL.Models
 {
-    public partial class DetalleCotizacion : ObservableObject
+    public partial class DetalleVenta : ObservableObject
     {
         [ObservableProperty]
         private int id;
