@@ -1,9 +1,6 @@
 ﻿using SICAVI.DAL.Data;
 using SICAVI.DAL.Models;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace SICAVI.DAL.Services
 {
@@ -16,29 +13,30 @@ namespace SICAVI.DAL.Services
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public ObservableCollection<Producto> Productos { get; set; } = new();
+        public List<Producto> ObtenerTodos() =>
+            DalExecutor.Execute(
+                () => _context.Productos.ToList(),
+                nameof(ObtenerTodos));
 
-        public List<Producto> ObtenerTodos()
-        {
-            return _context.Productos.ToList();
-        }
+        public void Agregar(Producto producto) =>
+            DalExecutor.Execute(() =>
+            {
+                _context.Productos.Add(producto);
+                _context.SaveChanges();
+            }, nameof(Agregar));
 
-        public void Agregar(Producto producto)
-        {
-            _context.Productos.Add(producto);
-            _context.SaveChanges();
-        }
+        public void Eliminar(Producto producto) =>
+            DalExecutor.Execute(() =>
+            {
+                _context.Productos.Remove(producto);
+                _context.SaveChanges();
+            }, nameof(Eliminar));
 
-        public void Eliminar(Producto producto)
-        {
-            _context.Productos.Remove(producto);
-            _context.SaveChanges();
-        }
-
-        public void Actualizar(Producto producto)
-        {
-            _context.Productos.Update(producto);
-            _context.SaveChanges();
-        }
+        public void Actualizar(Producto producto) =>
+            DalExecutor.Execute(() =>
+            {
+                _context.Productos.Update(producto);
+                _context.SaveChanges();
+            }, nameof(Actualizar));
     }
 }

@@ -1,11 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SICAVI.DAL.Data;
+﻿using SICAVI.DAL.Data;
 using SICAVI.DAL.Models;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SICAVI.DAL.Services
 {
@@ -18,34 +14,30 @@ namespace SICAVI.DAL.Services
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public List<Venta> ObtenerTodas()
-        {
-            try
-            {
-                return _context.Ventas
+        public List<Venta> ObtenerTodas() =>
+            DalExecutor.Execute(
+                () => _context.Ventas
                     .Include(v => v.Cliente)
                     .Include(v => v.Empleado)
                     .Include(v => v.Detalles)
                         .ThenInclude(d => d.Producto)
                     .OrderByDescending(v => v.Fecha)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error al cargar las ventas.", ex);
-            }
-        }
+                    .ToList(),
+                nameof(ObtenerTodas));
 
-        public void Registrar(Venta venta)
-        {
-            try
+        public List<Cliente> ObtenerClientes() =>
+            DalExecutor.Execute(
+                () => _context.Clientes.OrderBy(c => c.Nombre).ToList(),
+                nameof(ObtenerClientes));
+
+        public void Registrar(Venta venta) =>
+            DalExecutor.Execute(() =>
             {
-                // Descontar stock de cada producto
                 foreach (var detalle in venta.Detalles)
                 {
-                    var producto = _context.Productos.Find(detalle.Producto.Id);
-                    if (producto == null)
-                        throw new InvalidOperationException($"Producto '{detalle.Producto.Nombre}' no encontrado.");
+                    var producto = _context.Productos.Find(detalle.Producto.Id)
+                        ?? throw new InvalidOperationException(
+                            $"Producto '{detalle.Producto.Nombre}' no encontrado.");
 
                     if (producto.Stock < detalle.Cantidad)
                         throw new InvalidOperationException(
@@ -59,20 +51,10 @@ namespace SICAVI.DAL.Services
                 venta.Fecha = DateTime.Now;
                 _context.Ventas.Add(venta);
                 _context.SaveChanges();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error al registrar la venta.", ex);
-            }
-        }
+            }, nameof(Registrar));
 
-        public void Anular(Venta venta)
-        {
-            try
+        public void Anular(Venta venta) =>
+            DalExecutor.Execute(() =>
             {
                 var ventaDb = _context.Ventas
                     .Include(v => v.Detalles)
@@ -89,27 +71,6 @@ namespace SICAVI.DAL.Services
 
                 _context.Ventas.Remove(ventaDb);
                 _context.SaveChanges();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error al anular la venta.", ex);
-            }
-        }
-
-        public List<Cliente> ObtenerClientes()
-        {
-            try
-            {
-                return _context.Clientes.OrderBy(c => c.Nombre).ToList();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Error al cargar clientes.", ex);
-            }
-        }
+            }, nameof(Anular));
     }
 }
