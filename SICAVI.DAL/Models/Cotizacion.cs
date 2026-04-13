@@ -22,6 +22,9 @@ namespace SICAVI.DAL.Models
 
         public decimal Total => CalcularTotal();
 
+        public string FechaDisplay => Fecha.ToString("dd/MM/yyyy HH:mm");
+        public string TotalDisplay => Total.ToString("C0");
+
         private decimal CalcularTotal()
         {
             decimal total = 0;

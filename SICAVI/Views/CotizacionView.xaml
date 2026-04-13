@@ -1,12 +1,12 @@
 <Page
-    x:Class="SICAVI.Views.FacturacionView"
+    x:Class="SICAVI.WinUI.Views.CotizacionView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:SICAVI.WinUI.ViewModels"
     xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls">
 
     <Page.DataContext>
-        <vm:FacturacionViewModel/>
+        <vm:CotizacionViewModel/>
     </Page.DataContext>
 
     <Grid Padding="24" RowSpacing="16">
@@ -19,24 +19,24 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Facturación" FontSize="28" FontWeight="SemiBold"/>
-            <TextBlock Text="Historial de facturas emitidas" Opacity="0.6"/>
+            <TextBlock Text="Cotizaciones" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="Crea cotizaciones y conviértelas en facturas" Opacity="0.6"/>
         </StackPanel>
 
         <!-- Botones -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10">
+            <Button Content="➕  Nueva cotización"
+                    Click="NuevaCotizacion_Click"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="14,7"/>
+            <Button Content="💰  Convertir a factura"
+                    Click="ConvertirAFactura_Click"
+                    Padding="14,7"/>
+            <Button Content="🗑  Eliminar"
+                    Command="{Binding EliminarCommand}"
+                    Padding="14,7"/>
             <Button Content="🔄  Actualizar"
                     Command="{Binding ActualizarCommand}"
-                    Padding="14,7"/>
-            <Button Content="🗑  Anular factura"
-                    Click="AnularFactura_Click"
-                    Padding="14,7"/>
-            <Button Content="📄  Guardar PDF"
-                    Click="GuardarPdf_Click"
-                    Padding="14,7"/>
-            <Button Content="📧  Enviar por correo"
-                    Click="EnviarCorreo_Click"
-                    Style="{StaticResource AccentButtonStyle}"
                     Padding="14,7"/>
         </StackPanel>
 
@@ -53,29 +53,28 @@
                 CornerRadius="12"
                 Padding="12">
             <controls:DataGrid
-                ItemsSource="{Binding Facturas}"
-                SelectedItem="{Binding FacturaSeleccionada, Mode=TwoWay}"
+                ItemsSource="{Binding Cotizaciones}"
+                SelectedItem="{Binding CotizacionSeleccionada, Mode=TwoWay}"
                 AutoGenerateColumns="False"
                 CanUserSortColumns="True"
-                GridLinesVisibility="Horizontal"
-                DoubleTapped="VerDetalle_DoubleTapped">
+                GridLinesVisibility="Horizontal">
 
                 <controls:DataGrid.Columns>
-                    <controls:DataGridTextColumn Header="N° Factura"
-                                                 Binding="{Binding NumeroDisplay}"
-                                                 Width="140"/>
+                    <controls:DataGridTextColumn Header="ID"
+                                                 Binding="{Binding Id}"
+                                                 Width="50"/>
                     <controls:DataGridTextColumn Header="Fecha"
-                                                 Binding="{Binding FechaDisplay}"
+                                                 Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"
                                                  Width="130"/>
                     <controls:DataGridTextColumn Header="Cliente"
-                                                 Binding="{Binding ClienteDisplay}"
+                                                 Binding="{Binding Cliente.NombreCompleto}"
                                                  Width="*"/>
+                    <controls:DataGridTextColumn Header="Items"
+                                                 Binding="{Binding Detalles.Count}"
+                                                 Width="70"/>
                     <controls:DataGridTextColumn Header="Total"
-                                                 Binding="{Binding TotalDisplay}"
+                                                 Binding="{Binding Total, StringFormat='{}{0:C0}'}"
                                                  Width="110"/>
-                    <controls:DataGridTextColumn Header="Estado"
-                                                 Binding="{Binding EstadoDisplay}"
-                                                 Width="90"/>
                 </controls:DataGrid.Columns>
             </controls:DataGrid>
         </Border>

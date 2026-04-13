@@ -13,6 +13,7 @@
             <NavigationViewItem Content="Ventas" Tag="ventas" Icon="Shop"/>
             <NavigationViewItem Content="Inventario" Tag="inventario" Icon="AllApps"/>
             <NavigationViewItem Content="Facturación" Tag="facturacion" Icon="Page"/>
+            <NavigationViewItem Content="Cotizaciones" Tag="cotizaciones" Icon="Document"/>
             <NavigationViewItem Content="ChatBot IA" Tag="chatbot" Icon="Message"/>
         </NavigationView.MenuItems>
 

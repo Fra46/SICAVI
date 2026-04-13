@@ -1,0 +1,105 @@
+<ContentDialog
+    x:Class="SICAVI.WinUI.Views.CotizacionDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    Title="Nueva Cotización"
+    PrimaryButtonText="Guardar cotización"
+    PrimaryButtonClick="OnGuardar_Click"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary"
+    MinWidth="660">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="520">
+        <StackPanel Spacing="16" Padding="4,8">
+
+            <InfoBar x:Name="ErrorBar" Severity="Error" IsOpen="False"/>
+
+            <!-- Cliente -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Cliente" FontWeight="SemiBold" FontSize="13"/>
+                <ComboBox x:Name="ClienteCombo"
+                          ItemsSource="{x:Bind Clientes}"
+                          DisplayMemberPath="NombreCompleto"
+                          PlaceholderText="Seleccionar cliente (opcional)"
+                          HorizontalAlignment="Stretch"/>
+            </StackPanel>
+
+            <Border Height="1"
+                    Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    Opacity="0.4"/>
+
+            <TextBlock Text="Productos" FontWeight="SemiBold" FontSize="14"/>
+
+            <!-- Selector de producto -->
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ComboBox x:Name="ProductoCombo"
+                          Grid.Column="0"
+                          ItemsSource="{x:Bind Productos}"
+                          DisplayMemberPath="NombreCompleto"
+                          PlaceholderText="Seleccionar producto..."
+                          HorizontalAlignment="Stretch"/>
+
+                <NumberBox x:Name="CantidadBox"
+                           Grid.Column="1"
+                           PlaceholderText="Cant."
+                           Minimum="1"
+                           Value="1"
+                           SpinButtonPlacementMode="Compact"/>
+
+                <Button Grid.Column="2"
+                        Content="Agregar"
+                        Click="Agregar_Click"
+                        Style="{StaticResource AccentButtonStyle}"
+                        VerticalAlignment="Bottom"
+                        Padding="16,8"/>
+            </Grid>
+
+            <!-- Tabla -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="8"
+                    Padding="8"
+                    MinHeight="100">
+                <controls:DataGrid x:Name="ItemsGrid"
+                                   ItemsSource="{x:Bind Items}"
+                                   AutoGenerateColumns="False"
+                                   CanUserSortColumns="False"
+                                   GridLinesVisibility="Horizontal"
+                                   HeadersVisibility="Column">
+                    <controls:DataGrid.Columns>
+                        <controls:DataGridTextColumn Header="Producto"
+                                                     Binding="{Binding Producto.NombreCompleto}"
+                                                     Width="*"/>
+                        <controls:DataGridTextColumn Header="Precio"
+                                                     Binding="{Binding PrecioDisplay}"
+                                                     Width="110"/>
+                        <controls:DataGridTextColumn Header="Cant."
+                                                     Binding="{Binding Cantidad}"
+                                                     Width="70"/>
+                        <controls:DataGridTextColumn Header="Subtotal"
+                                                     Binding="{Binding SubtotalDisplay}"
+                                                     Width="110"/>
+                    </controls:DataGrid.Columns>
+                </controls:DataGrid>
+            </Border>
+
+            <Button Content="🗑  Quitar seleccionado"
+                    Click="Quitar_Click"
+                    Padding="12,6"/>
+
+            <!-- Total -->
+            <TextBlock x:Name="TotalText"
+                       Text="Total: $0"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Right"
+                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

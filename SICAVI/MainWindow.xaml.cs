@@ -39,6 +39,10 @@ namespace SICAVI.WinUI
                     ContentFrame.Navigate(typeof(FacturacionView));
                     break;
 
+                case "cotizaciones":
+                    ContentFrame.Navigate(typeof(CotizacionView));
+                    break;
+
                 case "chatbot":
                     ContentFrame.Navigate(typeof(ChatBotView));
                     break;

@@ -17,6 +17,8 @@
   <ItemGroup>
     <None Remove="ViewModels\InventarioView.xaml" />
     <None Remove="Views\ChatBotView.xaml" />
+    <None Remove="Views\CotizacionDialog.xaml" />
+    <None Remove="Views\CotizacionView.xaml" />
     <None Remove="Views\DashboardView.xaml" />
     <None Remove="Views\FacturacionView.xaml" />
     <None Remove="Views\InventarioView.xaml" />
@@ -58,10 +60,22 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+    <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SICAVI.DAL\SICAVI.DAL.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CotizacionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\CotizacionView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\NuevaVentaDialog.xaml">

@@ -15,6 +15,8 @@ namespace SICAVI.DAL.Data
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Venta> Ventas { get; set; }
         public DbSet<DetalleVenta> DetallesVenta { get; set; }
+        public DbSet<Factura> Facturas { get; set; }
+        public DbSet<Cotizacion> Cotizaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,6 +51,21 @@ namespace SICAVI.DAL.Data
                 .WithMany()
                 .HasForeignKey("ProductoId")
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Factura → Venta
+            modelBuilder.Entity<Factura>()
+                .HasOne(f => f.Venta)
+                .WithMany()
+                .HasForeignKey("VentaId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Cotizacion → Cliente
+            modelBuilder.Entity<Cotizacion>()
+                .HasOne(c => c.Cliente)
+                .WithMany()
+                .HasForeignKey("ClienteId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Precio como decimal(18,2)
             modelBuilder.Entity<Producto>()

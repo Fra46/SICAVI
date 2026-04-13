@@ -33,6 +33,8 @@ namespace SICAVI
 
             var services = new ServiceCollection();
 
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
             var folder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SICAVI"

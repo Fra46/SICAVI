@@ -17,5 +17,8 @@ namespace SICAVI.DAL.Models
         private decimal precioUnitario;
 
         public decimal Subtotal => cantidad * precioUnitario;
+
+        public string PrecioDisplay => precioUnitario.ToString("C0");
+        public string SubtotalDisplay => Subtotal.ToString("C0");
     }
 }

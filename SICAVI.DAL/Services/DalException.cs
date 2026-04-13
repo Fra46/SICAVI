@@ -1,4 +1,6 @@
-﻿namespace SICAVI.DAL.Services
+﻿using System;
+
+namespace SICAVI.DAL.Services
 {
     public class DalException : Exception
     {
