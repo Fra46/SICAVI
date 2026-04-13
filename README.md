@@ -7,6 +7,8 @@
 **Sistema de Inventario, Compras y Ventas**  
 Aplicación de escritorio moderna construida con WinUI 3 y arquitectura MVVM.
 
+![Sicavi Logo](sicavi-logo.png)
+
 Guía de configuración y desarrollo — v1.0
 
 ---
