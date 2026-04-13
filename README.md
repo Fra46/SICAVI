@@ -126,29 +126,29 @@ SICAVI/
 
 ---
 
-### 📏 Convenciones de código
+## 📏 Convenciones de código
 
-## Modelos
+### Modelos
 
 ```bash
 [ObservableProperty]
 private string nombre;
 ```
 
-## Commands
+### Commands
 
 ```bash
 [RelayCommand]
 private void EliminarProducto() { }
 ```
 
-## Servicios
+### Servicios
 
 ```bash
 DalExecutor.Execute(() => _context.Productos.ToList());
 ```
 
-## Manejo de errores
+### Manejo de errores
 
 ```bash
 catch (Exception ex)
@@ -158,7 +158,7 @@ catch (Exception ex)
 }
 ```
 
-## Convenciones
+### Convenciones
 
 | Elemento | Formato         |
 | -------- | --------------- |
@@ -175,7 +175,7 @@ catch (Exception ex)
 - 🐞 Breakpoints: F9
 - 📊 Logs: Ventana Output (EF Core)
 
-## 🐞 Depuración
+### 🐞 Depuración
 - Breakpoints (F9)
 - Output → logs SQL
 - Event Viewer si falla
@@ -193,32 +193,32 @@ catch (Exception ex)
 
 ---
 
-### 📊 Fases pendientes
+## 📊 Fases pendientes
 
-## 📈 Fase 4 — Dashboard
+### 📈 Fase 4 — Dashboard
 - Ventas del día/mes
 - Stock crítico
 - Últimas ventas
 - Gráfica semanal
 
-## 📁 Archivos:
+### 📁 Archivos:
 
 ```bash
 Views/DashboardView.xaml  
 ViewModels/DashboardViewModel.cs
 ```
 
-## 📤 Reportes
+### 📤 Reportes
 
 Instalar:
 
-## Excel
+### Excel
 
 ```bash
 dotnet add package ClosedXML
 ```
 
-## PDF
+### PDF
 
 ```bash
 dotnet add package QuestPDF
@@ -226,19 +226,19 @@ dotnet add package QuestPDF
 
 ---
 
-### 🔐 Fase 5 — Configuración y Login
+## 🔐 Fase 5 — Configuración y Login
 
-## Configuración
+### Configuración
 - Nombre tienda
 - IVA
 - SMTP
 - Impresora
 
-## Login
+### Login
 - Validación desde SQLite
 - Roles: Admin / Empleado
 
-## Seguridad
+### Seguridad
 
 ```bash
 dotnet add package BCrypt.Net-Next
@@ -253,15 +253,15 @@ BCrypt.Verify(password, hash);
 
 ---
 
-### 🌿 Git Workflow
+## 🌿 Git Workflow
 
-## Crear rama
+### Crear rama
 
 ```bash
 git checkout -b feature/nueva-feature
 ```
 
-## Commit
+### Commit
 
 ```bash
 git commit -m "feat: nueva funcionalidad"
@@ -269,7 +269,7 @@ git commit -m "feat: nueva funcionalidad"
 
 ---
 
-### 👨‍💻 Autores
+## 👨‍💻 Autores
 
 Andres Zapata
 - GitHub: [@Fra46](https://github.com/Fra46)
