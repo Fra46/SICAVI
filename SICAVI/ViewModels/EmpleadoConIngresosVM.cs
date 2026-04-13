@@ -1,5 +1,8 @@
-﻿public class EmpleadoConIngresosVM
+﻿namespace SICAVI.WinUI.ViewModels
 {
-    public string NombreEmpleado { get; set; }
-    public decimal TotalGenerado { get; set; }
+    public class EmpleadoConIngresosVM
+    {
+        public string NombreEmpleado { get; set; }
+        public decimal TotalGenerado { get; set; }
+    }
 }
