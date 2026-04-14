@@ -1,136 +1,190 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using SICAVI.DAL.Models;
 using SICAVI.WinUI.ViewModels;
+using SICAVI.WinUI.Views;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace SICAVI.Views
 {
     public sealed partial class FacturacionView : Page
     {
-        public FacturacionView()
-        {
-            InitializeComponent();
-        }
+        public FacturacionView() => InitializeComponent();
 
-        private async void AnularFactura_Click(object sender, RoutedEventArgs e)
-        {
-            var vm = (FacturacionViewModel)DataContext;
-            if (vm.FacturaSeleccionada == null) return;
+        private FacturacionViewModel VM => (FacturacionViewModel)DataContext;
 
-            var motivoBox = new TextBox { PlaceholderText = "Motivo de anulación..." };
-            var dialog = new ContentDialog
-            {
-                Title = "Anular factura",
-                Content = motivoBox,
-                PrimaryButtonText = "Anular",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = XamlRoot
-            };
+        // ── Nueva factura independiente ────────────────────────────
+        private async void NuevaFactura_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new NuevaFacturaDialog(
+                App.Services.GetProductos(),
+                App.Services.GetClientes())
+            { XamlRoot = XamlRoot };
 
             var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
-                vm.AnularFactura(vm.FacturaSeleccionada, motivoBox.Text.Trim());
-        }
-
-        private async void GuardarPdf_Click(object sender, RoutedEventArgs e)
-        {
-            var vm = (FacturacionViewModel)DataContext;
-            if (vm.FacturaSeleccionada == null) return;
-
-            try
+            if (result == ContentDialogResult.Primary && dialog.FacturaResultante != null)
             {
-                var ruta = vm.GuardarPdf(vm.FacturaSeleccionada);
-                await new ContentDialog
-                {
-                    Title = "✅ PDF guardado",
-                    Content = ruta,
-                    CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
-                }.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                await new ContentDialog
-                {
-                    Title = "Error",
-                    Content = ex.Message,
-                    CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
-                }.ShowAsync();
+                var factura = VM.RegistrarIndependiente(dialog.FacturaResultante);
+                if (factura != null)
+                    await MostrarOpcionesPdf(factura);
             }
         }
 
-        private async void EnviarCorreo_Click(object sender, RoutedEventArgs e)
+        // ── Facturar desde venta existente ────────────────────────
+        private async void FacturarDesdeVenta_Click(object sender, RoutedEventArgs e)
         {
-            var vm = (FacturacionViewModel)DataContext;
-            if (vm.FacturaSeleccionada == null) return;
-
-            try
+            if (VM.VentasSinFactura.Count == 0)
             {
-                await vm.EnviarCorreoAsync(vm.FacturaSeleccionada);
-                await new ContentDialog
-                {
-                    Title = "✅ Correo enviado",
-                    Content = $"Factura enviada a {vm.FacturaSeleccionada.Venta?.Cliente?.Correo}",
-                    CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
-                }.ShowAsync();
+                await MostrarMensaje("Sin ventas pendientes",
+                    "No hay ventas pendientes de facturar. Todas las ventas ya tienen factura.");
+                return;
             }
-            catch (Exception ex)
+
+            var dialog = new SeleccionarVentaDialog(VM.VentasSinFactura.ToList())
+            { XamlRoot = XamlRoot };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.VentaSeleccionada != null)
             {
-                await new ContentDialog
-                {
-                    Title = "Error al enviar",
-                    Content = ex.Message,
-                    CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
-                }.ShowAsync();
+                var factura = VM.RegistrarDesdeVenta(dialog.VentaSeleccionada);
+                if (factura != null)
+                    await MostrarOpcionesPdf(factura);
             }
         }
 
-        private async void VerDetalle_DoubleTapped(
-            object sender,
-            Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        // ── Doble clic → opciones de la factura ───────────────────
+        private async void VerDetalleFactura_DoubleTapped(
+            object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            var vm = (FacturacionViewModel)DataContext;
-            if (vm.FacturaSeleccionada == null) return;
+            if (VM.FacturaSeleccionada == null) return;
+            await MostrarOpcionesPdf(VM.FacturaSeleccionada);
+        }
 
-            var f = vm.FacturaSeleccionada;
-            var v = f.Venta;
+        // ── Panel de opciones: PDF / Correo / Detalle ─────────────
+        private async Task MostrarOpcionesPdf(Factura factura)
+        {
+            var detalle = string.Join("\n", factura.Detalles
+                .Select(d => $"  • {d.ProductoDisplay}  ×{d.Cantidad}  =  {d.SubtotalDisplay}")) +
+                $"\n\n  Subtotal:  {factura.Subtotal:C0}" +
+                $"\n  IVA:       {factura.Iva:C0}" +
+                $"\n  TOTAL:     {factura.TotalDisplay}";
 
-            var lineas = v.Detalles
-                .Select(d => $"  • {d.ProductoDisplay,-28} x{d.Cantidad,3}  {d.SubtotalDisplay,10}");
-
-            var cuerpo =
-                $"Factura:  {f.Numero}\n" +
-                $"Fecha:    {f.FechaDisplay}\n" +
-                $"Cliente:  {f.ClienteDisplay}\n" +
-                $"{"─",40}\n" +
-                string.Join("\n", lineas) +
-                $"\n{"─",40}\n" +
-                $"Subtotal: {v.Subtotal:C0}\n" +
-                $"IVA:      {v.Iva:C0}\n" +
-                $"TOTAL:    {v.TotalDisplay}\n" +
-                (f.Anulada ? $"\n⚠ ANULADA — {f.MotivoAnulacion}" : "");
-
-            await new ContentDialog
+            var dialog = new ContentDialog
             {
-                Title = $"Detalle — {f.Numero}",
+                Title = $"Factura {factura.Numero}",
                 Content = new ScrollViewer
                 {
                     Content = new TextBlock
                     {
-                        Text = cuerpo,
+                        Text = detalle,
                         FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
                         TextWrapping = TextWrapping.Wrap
                     },
-                    MaxHeight = 400
+                    MaxHeight = 300
                 },
+                PrimaryButtonText = "Guardar PDF",
+                SecondaryButtonText = "Enviar por correo",
                 CloseButtonText = "Cerrar",
                 XamlRoot = XamlRoot
-            }.ShowAsync();
+            };
+
+            var opcion = await dialog.ShowAsync();
+
+            if (opcion == ContentDialogResult.Primary)
+                await GuardarPdf(factura);
+            else if (opcion == ContentDialogResult.Secondary)
+                await EnviarCorreo(factura);
+        }
+
+        // ── Guardar PDF ───────────────────────────────────────────
+        private async Task GuardarPdf(Factura factura)
+        {
+            var pdf = VM.GenerarPdf(factura);
+            if (pdf == null) return;
+
+            var picker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = $"Factura_{factura.Numero}"
+            };
+            picker.FileTypeChoices.Add("PDF", new List<string> { ".pdf" });
+
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow!);
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            var file = await picker.PickSaveFileAsync();
+            if (file != null)
+            {
+                await FileIO.WriteBytesAsync(file, pdf);
+                await MostrarMensaje("PDF guardado", $"Factura guardada en:\n{file.Path}");
+            }
+        }
+
+        // ── Enviar correo ─────────────────────────────────────────
+        private async Task EnviarCorreo(Factura factura)
+        {
+            var pdf = VM.GenerarPdf(factura);
+            if (pdf == null) return;
+
+            var configService = new ConfiguracionService();
+            configService.Cargar();
+
+            if (configService.SMTPActual == null ||
+                string.IsNullOrWhiteSpace(configService.SMTPActual.Usuario))
+            {
+                await MostrarMensaje("SMTP no configurado",
+                    "Configura el servidor de correo en Configuración antes de enviar facturas.");
+                return;
+            }
+
+            var emailDefault = factura.Cliente?.Correo ?? string.Empty;
+
+            var input = new TextBox
+            {
+                PlaceholderText = "correo@ejemplo.com",
+                Text = emailDefault,
+                Width = 340
+            };
+
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Enviar factura por correo",
+                Content = new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+            {
+                new TextBlock { Text = "Correo del destinatario:" },
+                input
+            }
+                },
+                PrimaryButtonText = "Enviar",
+                CloseButtonText = "Cancelar",
+                XamlRoot = XamlRoot
+            };
+
+            var r = await confirmDialog.ShowAsync();
+            if (r != ContentDialogResult.Primary) return;
+
+            VM.EnviarCorreo(factura, pdf, configService.SMTPActual, input.Text.Trim());
+        }
+
+        private async Task MostrarMensaje(string titulo, string texto)
+        {
+            var d = new ContentDialog
+            {
+                Title = titulo,
+                Content = texto,
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            await d.ShowAsync();
         }
     }
 }

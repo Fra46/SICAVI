@@ -1,5 +1,5 @@
 <Page
-    x:Class="SICAVI.WinUI.Views.CotizacionView"
+    x:Class="SICAVI.Views.CotizacionView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:SICAVI.WinUI.ViewModels"
@@ -14,13 +14,14 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
         <StackPanel Grid.Row="0">
             <TextBlock Text="Cotizaciones" FontSize="28" FontWeight="SemiBold"/>
-            <TextBlock Text="Crea cotizaciones y conviértelas en facturas" Opacity="0.6"/>
+            <TextBlock Text="Crea y convierte cotizaciones en ventas o facturas" Opacity="0.6"/>
         </StackPanel>
 
         <!-- Botones -->
@@ -29,29 +30,37 @@
                     Click="NuevaCotizacion_Click"
                     Style="{StaticResource AccentButtonStyle}"
                     Padding="14,7"/>
-            <Button Content="💰  Convertir a factura"
-                    Click="ConvertirAFactura_Click"
+            <Button Content="✅  Convertir en factura"
+                    Click="ConvertirFactura_Click"
+                    Padding="14,7"/>
+            <Button Content="🛒  Convertir en venta + factura"
+                    Click="ConvertirVentaFactura_Click"
+                    Padding="14,7"/>
+            <Button Content="📄  Ver PDF"
+                    Click="VerPdf_Click"
                     Padding="14,7"/>
             <Button Content="🗑  Eliminar"
-                    Command="{Binding EliminarCommand}"
+                    Command="{Binding EliminarCotizacionCommand}"
                     Padding="14,7"/>
             <Button Content="🔄  Actualizar"
                     Command="{Binding ActualizarCommand}"
                     Padding="14,7"/>
         </StackPanel>
 
-        <!-- Error -->
-        <InfoBar Grid.Row="2"
-                 Severity="Error"
+        <!-- Mensajes -->
+        <InfoBar Grid.Row="2" Severity="Error"
                  IsOpen="{Binding HayError}"
                  Message="{Binding MensajeError}"
                  IsClosable="True"/>
+        <InfoBar Grid.Row="3" Severity="Success"
+                 IsOpen="{Binding HayExito}"
+                 Message="{Binding MensajeExito}"
+                 IsClosable="True"/>
 
         <!-- Tabla -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                CornerRadius="12"
-                Padding="12">
+                CornerRadius="12" Padding="12">
             <controls:DataGrid
                 ItemsSource="{Binding Cotizaciones}"
                 SelectedItem="{Binding CotizacionSeleccionada, Mode=TwoWay}"
@@ -60,21 +69,12 @@
                 GridLinesVisibility="Horizontal">
 
                 <controls:DataGrid.Columns>
-                    <controls:DataGridTextColumn Header="ID"
-                                                 Binding="{Binding Id}"
-                                                 Width="50"/>
-                    <controls:DataGridTextColumn Header="Fecha"
-                                                 Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"
-                                                 Width="130"/>
-                    <controls:DataGridTextColumn Header="Cliente"
-                                                 Binding="{Binding Cliente.NombreCompleto}"
-                                                 Width="*"/>
-                    <controls:DataGridTextColumn Header="Items"
-                                                 Binding="{Binding Detalles.Count}"
-                                                 Width="70"/>
-                    <controls:DataGridTextColumn Header="Total"
-                                                 Binding="{Binding Total, StringFormat='{}{0:C0}'}"
-                                                 Width="110"/>
+                    <controls:DataGridTextColumn Header="Número"    Binding="{Binding NumeroDisplay}"  Width="110"/>
+                    <controls:DataGridTextColumn Header="Fecha"     Binding="{Binding FechaDisplay}"   Width="110"/>
+                    <controls:DataGridTextColumn Header="Cliente"   Binding="{Binding ClienteDisplay}" Width="*"/>
+                    <controls:DataGridTextColumn Header="Total"     Binding="{Binding TotalDisplay}"   Width="110"/>
+                    <controls:DataGridTextColumn Header="Estado"    Binding="{Binding EstadoDisplay}"  Width="100"/>
+                    <controls:DataGridTextColumn Header="Vence"     Binding="{Binding FechaVencimiento}" Width="100"/>
                 </controls:DataGrid.Columns>
             </controls:DataGrid>
         </Border>

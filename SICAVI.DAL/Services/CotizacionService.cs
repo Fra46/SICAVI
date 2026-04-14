@@ -6,61 +6,149 @@ namespace SICAVI.DAL.Services
 {
     public class CotizacionService
     {
-        private readonly DbContext _db;
+        private readonly ConnectionContext _context;
+        private readonly FacturaService _facturaService;
+        private readonly VentaService _ventaService;
 
-        public CotizacionService(DbContext db)
+        public CotizacionService(
+            ConnectionContext context,
+            FacturaService facturaService,
+            VentaService ventaService)
         {
-            _db = db;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _facturaService = facturaService;
+            _ventaService = ventaService;
         }
 
         public List<Cotizacion> ObtenerTodas() =>
-            _db.Set<Cotizacion>()
-               .Include(c => c.Detalles)
-               .ToList();
+            DalExecutor.Execute(() =>
+                _context.Cotizaciones
+                    .Include(c => c.Cliente)
+                    .Include(c => c.Empleado)
+                    .Include(c => c.Detalles).ThenInclude(d => d.Producto)
+                    .OrderByDescending(c => c.Fecha)
+                    .ToList(),
+                nameof(ObtenerTodas));
 
-        public void Guardar(Cotizacion cotizacion)
-        {
-            if (cotizacion.Id == 0)
+        public Cotizacion Registrar(Cotizacion cotizacion) =>
+            DalExecutor.Execute(() =>
             {
+                cotizacion.Numero = GenerarNumero();
                 cotizacion.Fecha = DateTime.Now;
-                _db.Set<Cotizacion>().Add(cotizacion);
-            }
-            else
+                cotizacion.Estado = EstadoCotizacion.Pendiente;
+
+                if (cotizacion.FechaVencimiento == null)
+                    cotizacion.FechaVencimiento = DateTime.Now.AddDays(15);
+
+                _context.Cotizaciones.Add(cotizacion);
+                _context.SaveChanges();
+                return cotizacion;
+            }, nameof(Registrar));
+
+        public void Actualizar(Cotizacion cotizacion) =>
+            DalExecutor.Execute(() =>
             {
-                    _db.Set<Cotizacion>().Update(cotizacion);
-            }
+                _context.Cotizaciones.Update(cotizacion);
+                _context.SaveChanges();
+            }, nameof(Actualizar));
 
-            _db.SaveChanges();
-        }
-
-        public void Eliminar(Cotizacion cotizacion)
-        {
-            _db.Set<Cotizacion>().Remove(cotizacion);
-            _db.SaveChanges();
-        }
-
-        public Venta ConvertirAVenta(Cotizacion cotizacion, string metodoPago, decimal tasaIva)
-        {
-            var venta = new Venta
+        public void Eliminar(Cotizacion cotizacion) =>
+            DalExecutor.Execute(() =>
             {
-                Cliente = cotizacion.Cliente,
-                Empleado = cotizacion.Empleado,
-                MetodoPago = metodoPago,
-                Fecha = DateTime.Now
-            };
+                var db = _context.Cotizaciones.Find(cotizacion.Id)
+                    ?? throw new InvalidOperationException("Cotizacion no encontrada.");
+                _context.Cotizaciones.Remove(db);
+                _context.SaveChanges();
+            }, nameof(Eliminar));
 
-            foreach (var d in cotizacion.Detalles)
+        public Factura ConvertirAFactura(Cotizacion cotizacion, string metodoPago) =>
+            DalExecutor.Execute(() =>
             {
-                venta.Detalles.Add(new DetalleVenta
+                var factura = new Factura
                 {
-                    Producto = d.Producto,
-                    Cantidad = d.Cantidad,
-                    PrecioUnitario = d.PrecioUnitario
-                });
+                    Cliente = cotizacion.Cliente,
+                    Empleado = cotizacion.Empleado,
+                    MetodoPago = metodoPago,
+                    Observaciones = $"Generada desde cotizacion {cotizacion.NumeroDisplay}"
+                };
+
+                foreach (var d in cotizacion.Detalles)
+                {
+                    factura.Detalles.Add(new DetalleFactura
+                    {
+                        Producto = d.Producto,
+                        Cantidad = d.Cantidad,
+                        PrecioUnitario = d.PrecioUnitario
+                    });
+                }
+
+                var facturaRegistrada = _facturaService.Registrar(factura);
+
+                var db = _context.Cotizaciones.Find(cotizacion.Id);
+                if (db != null)
+                {
+                    db.Estado = EstadoCotizacion.Aceptada;
+                    _context.SaveChanges();
+                }
+
+                return facturaRegistrada;
+            }, nameof(ConvertirAFactura));
+
+        public (Venta venta, Factura factura) ConvertirAVentaYFactura(
+            Cotizacion cotizacion, string metodoPago) =>
+            DalExecutor.Execute(() =>
+            {
+                var cot = _context.Cotizaciones
+                    .Include(c => c.Cliente)
+                    .Include(c => c.Empleado)
+                    .Include(c => c.Detalles).ThenInclude(d => d.Producto)
+                    .FirstOrDefault(c => c.Id == cotizacion.Id)
+                    ?? throw new InvalidOperationException("Cotizacion no encontrada.");
+
+                var venta = new Venta
+                {
+                    Cliente = cot.Cliente,
+                    Empleado = cot.Empleado,
+                    MetodoPago = metodoPago
+                };
+
+                foreach (var d in cot.Detalles)
+                {
+                    venta.Detalles.Add(new DetalleVenta
+                    {
+                        Producto = d.Producto,
+                        Cantidad = d.Cantidad,
+                        PrecioUnitario = d.PrecioUnitario
+                    });
+                }
+
+                _ventaService.Registrar(venta);
+
+                var factura = _facturaService.FacturarDesdeVenta(
+                    venta, $"Generada desde cotizacion {cot.NumeroDisplay}");
+
+                var db = _context.Cotizaciones.Find(cot.Id);
+                if (db != null) { db.Estado = EstadoCotizacion.Aceptada; _context.SaveChanges(); }
+
+                return (venta, factura);
+            }, nameof(ConvertirAVentaYFactura));
+
+        private string GenerarNumero()
+        {
+            var ultimo = _context.Cotizaciones
+                .OrderByDescending(c => c.Id)
+                .Select(c => c.Numero)
+                .FirstOrDefault();
+
+            int siguiente = 1;
+            if (!string.IsNullOrEmpty(ultimo) &&
+                ultimo.StartsWith("COT-") &&
+                int.TryParse(ultimo[4..], out int num))
+            {
+                siguiente = num + 1;
             }
 
-            venta.RecalcularTotales(tasaIva);
-            return venta;
+            return $"COT-{siguiente:D4}";
         }
     }
 }

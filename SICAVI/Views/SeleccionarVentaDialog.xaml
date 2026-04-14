@@ -1,0 +1,33 @@
+<ContentDialog
+    x:Class="SICAVI.WinUI.Views.SeleccionarVentaDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
+    Title="Seleccionar venta para facturar"
+    PrimaryButtonText="Facturar venta seleccionada"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary"
+    MinWidth="600">
+
+    <StackPanel Spacing="12" Padding="4,8">
+        <TextBlock Text="Selecciona la venta que deseas facturar:"
+                   Opacity="0.7" FontSize="13"/>
+
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="8" Padding="8" MinHeight="200">
+            <controls:DataGrid x:Name="VentasGrid"
+                               ItemsSource="{x:Bind Ventas}"
+                               AutoGenerateColumns="False"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Horizontal"
+                               SelectionChanged="VentasGrid_SelectionChanged">
+                <controls:DataGrid.Columns>
+                    <controls:DataGridTextColumn Header="Fecha"   Binding="{Binding FechaDisplay}"   Width="130"/>
+                    <controls:DataGridTextColumn Header="Cliente" Binding="{Binding ClienteDisplay}" Width="*"/>
+                    <controls:DataGridTextColumn Header="Total"   Binding="{Binding TotalDisplay}"   Width="110"/>
+                    <controls:DataGridTextColumn Header="Método"  Binding="{Binding MetodoPago}"     Width="120"/>
+                </controls:DataGrid.Columns>
+            </controls:DataGrid>
+        </Border>
+    </StackPanel>
+</ContentDialog>

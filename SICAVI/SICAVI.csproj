@@ -22,8 +22,11 @@
     <None Remove="Views\DashboardView.xaml" />
     <None Remove="Views\FacturacionView.xaml" />
     <None Remove="Views\InventarioView.xaml" />
+    <None Remove="Views\NuevaCotizacionDialog.xaml" />
+    <None Remove="Views\NuevaFacturaDialog.xaml" />
     <None Remove="Views\NuevaVentaDialog.xaml" />
     <None Remove="Views\ProductoDialog.xaml" />
+    <None Remove="Views\SeleccionarVentaDialog.xaml" />
     <None Remove="Views\VentasView.xaml" />
   </ItemGroup>
 
@@ -66,6 +69,21 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SICAVI.DAL\SICAVI.DAL.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\NuevaCotizacionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\SeleccionarVentaDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\NuevaFacturaDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\CotizacionDialog.xaml">

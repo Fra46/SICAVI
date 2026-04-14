@@ -1,81 +1,124 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using SICAVI.DAL.Models;
 using SICAVI.WinUI.ViewModels;
 using SICAVI.WinUI.Views;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
-namespace SICAVI.WinUI.Views
+namespace SICAVI.Views
 {
     public sealed partial class CotizacionView : Page
     {
-        public CotizacionView()
-        {
-            InitializeComponent();
-        }
+        public CotizacionView() => InitializeComponent();
+
+        private CotizacionViewModel VM => (CotizacionViewModel)DataContext;
 
         private async void NuevaCotizacion_Click(object sender, RoutedEventArgs e)
         {
-            var vm = (CotizacionViewModel)DataContext;
-
-            var dialog = new CotizacionDialog(
-                App.Services.GetProductos(),
-                App.Services.GetClientes())
-            {
-                XamlRoot = XamlRoot
-            };
+            var dialog = new NuevaCotizacionDialog(
+                VM.Productos.ToList(),
+                VM.Clientes.ToList())
+            { XamlRoot = XamlRoot };
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && dialog.CotizacionResultante != null)
-                vm.Guardar(dialog.CotizacionResultante);
+                VM.Registrar(dialog.CotizacionResultante);
         }
 
-        private async void ConvertirAFactura_Click(object sender, RoutedEventArgs e)
+        private async void ConvertirFactura_Click(object sender, RoutedEventArgs e)
         {
-            var vm = (CotizacionViewModel)DataContext;
-            if (vm.CotizacionSeleccionada == null) return;
+            if (VM.CotizacionSeleccionada == null)
+            { await Aviso("Selecciona una cotización primero."); return; }
 
-            // Pedir método de pago
-            var metodoPagoCombo = new ComboBox
+            if (VM.CotizacionSeleccionada.Estado == EstadoCotizacion.Aceptada)
+            { await Aviso("Esta cotización ya fue convertida."); return; }
+
+            var metodo = await PedirMetodoPago();
+            if (metodo == null) return;
+
+            VM.ConvertirAFactura(VM.CotizacionSeleccionada, metodo);
+        }
+
+        private async void ConvertirVentaFactura_Click(object sender, RoutedEventArgs e)
+        {
+            if (VM.CotizacionSeleccionada == null)
+            { await Aviso("Selecciona una cotización primero."); return; }
+
+            if (VM.CotizacionSeleccionada.Estado == EstadoCotizacion.Aceptada)
+            { await Aviso("Esta cotización ya fue convertida."); return; }
+
+            var metodo = await PedirMetodoPago();
+            if (metodo == null) return;
+
+            var (_, factura) = VM.ConvertirAVentaYFactura(VM.CotizacionSeleccionada, metodo);
+            if (factura != null)
+                await Aviso($"Venta y factura {factura.Numero} generadas. Stock descontado.");
+        }
+
+        private async void VerPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (VM.CotizacionSeleccionada == null)
+            { await Aviso("Selecciona una cotización primero."); return; }
+
+            var pdf = VM.GenerarPdf(VM.CotizacionSeleccionada);
+            if (pdf == null) return;
+
+            var picker = new FileSavePicker
             {
-                SelectedIndex = 0,
-                HorizontalAlignment = HorizontalAlignment.Stretch
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = $"Cotizacion_{VM.CotizacionSeleccionada.NumeroDisplay}"
             };
-            foreach (var m in new[] { "Efectivo", "Tarjeta debito", "Tarjeta credito", "Nequi", "Daviplata", "Transferencia" })
-                metodoPagoCombo.Items.Add(m);
+            picker.FileTypeChoices.Add("PDF", new List<string> { ".pdf" });
 
-            var dialog = new ContentDialog
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow!);
+            InitializeWithWindow.Initialize(picker, hwnd);
+
+            var file = await picker.PickSaveFileAsync();
+            if (file != null)
+                await FileIO.WriteBytesAsync(file, pdf);
+        }
+
+        private async Task<string?> PedirMetodoPago()
+        {
+            var combo = new ComboBox { SelectedIndex = 0, Width = 280 };
+            foreach (var m in new[] { "Efectivo", "Tarjeta débito", "Tarjeta crédito",
+                                      "Nequi", "Daviplata", "Transferencia" })
+                combo.Items.Add(m);
+
+            var d = new ContentDialog
             {
-                Title = "Convertir a factura",
+                Title = "Método de pago",
                 Content = new StackPanel
                 {
                     Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "Selecciona el método de pago:" },
-                        metodoPagoCombo
-                    }
+                    Children = {
+                    new TextBlock { Text = "Selecciona el método de pago:" }, combo }
                 },
-                PrimaryButtonText = "Confirmar",
+                PrimaryButtonText = "Continuar",
                 CloseButtonText = "Cancelar",
                 XamlRoot = XamlRoot
             };
 
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary) return;
+            var r = await d.ShowAsync();
+            return r == ContentDialogResult.Primary ? combo.SelectedItem?.ToString() : null;
+        }
 
-            var metodoPago = metodoPagoCombo.SelectedItem?.ToString() ?? "Efectivo";
-            var factura = vm.ConvertirAFactura(vm.CotizacionSeleccionada, metodoPago);
-
-            if (factura != null)
+        private async Task Aviso(string msg)
+        {
+            var d = new ContentDialog
             {
-                await new ContentDialog
-                {
-                    Title = "✅ Factura generada",
-                    Content = $"Se generó la {factura.Numero} por {factura.TotalDisplay}",
-                    CloseButtonText = "OK",
-                    XamlRoot = XamlRoot
-                }.ShowAsync();
-            }
+                Title = "Aviso",
+                Content = msg,
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot
+            };
+            await d.ShowAsync();
         }
     }
 }

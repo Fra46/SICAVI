@@ -17,7 +17,9 @@ public class ConfiguracionService
         {
             Servidor = "smtp.gmail.com",
             Puerto = 587,
-            UsarSSL = true
+            UsarSSL = true,
+            Usuario = "andresfzapatamar@gmail.com",
+            Contrasena = "jwsg qifn zkdv avdc\r\n"
         };
     }
 

@@ -14,68 +14,95 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
         <StackPanel Grid.Row="0">
             <TextBlock Text="Facturación" FontSize="28" FontWeight="SemiBold"/>
-            <TextBlock Text="Historial de facturas emitidas" Opacity="0.6"/>
+            <TextBlock Text="Historial y generación de facturas" Opacity="0.6"/>
         </StackPanel>
 
+        <!-- Métricas -->
+        <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="10" Padding="16,12">
+                <StackPanel>
+                    <TextBlock Text="Facturas hoy" FontSize="12" Opacity="0.6"/>
+                    <TextBlock Text="{Binding TotalFacturasHoy}" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="10" Padding="16,12">
+                <StackPanel>
+                    <TextBlock Text="Total hoy" FontSize="12" Opacity="0.6"/>
+                    <TextBlock Text="{Binding TotalHoyDisplay}" FontSize="22" FontWeight="Bold"
+                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="10" Padding="16,12">
+                <TextBlock Text="Doble clic en una factura para generar PDF o enviar por correo."
+                           Opacity="0.5" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+
         <!-- Botones -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10">
+            <Button Content="➕  Nueva factura"
+                    Click="NuevaFactura_Click"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="14,7"/>
+            <Button Content="📄  Desde venta"
+                    Click="FacturarDesdeVenta_Click"
+                    Padding="14,7"/>
+            <Button Content="🗑  Anular"
+                    Command="{Binding AnularFacturaCommand}"
+                    Padding="14,7"/>
             <Button Content="🔄  Actualizar"
                     Command="{Binding ActualizarCommand}"
                     Padding="14,7"/>
-            <Button Content="🗑  Anular factura"
-                    Click="AnularFactura_Click"
-                    Padding="14,7"/>
-            <Button Content="📄  Guardar PDF"
-                    Click="GuardarPdf_Click"
-                    Padding="14,7"/>
-            <Button Content="📧  Enviar por correo"
-                    Click="EnviarCorreo_Click"
-                    Style="{StaticResource AccentButtonStyle}"
-                    Padding="14,7"/>
         </StackPanel>
 
-        <!-- Error -->
-        <InfoBar Grid.Row="2"
-                 Severity="Error"
+        <!-- Error / Exito -->
+        <InfoBar Grid.Row="3" Severity="Error"
                  IsOpen="{Binding HayError}"
                  Message="{Binding MensajeError}"
                  IsClosable="True"/>
+        <InfoBar Grid.Row="4" Severity="Success"
+                 IsOpen="{Binding HayExito}"
+                 Message="{Binding MensajeExito}"
+                 IsClosable="True"/>
 
-        <!-- Tabla -->
-        <Border Grid.Row="3"
+        <!-- Historial -->
+        <Border Grid.Row="5"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                CornerRadius="12"
-                Padding="12">
+                CornerRadius="12" Padding="12">
             <controls:DataGrid
                 ItemsSource="{Binding Facturas}"
                 SelectedItem="{Binding FacturaSeleccionada, Mode=TwoWay}"
                 AutoGenerateColumns="False"
                 CanUserSortColumns="True"
                 GridLinesVisibility="Horizontal"
-                DoubleTapped="VerDetalle_DoubleTapped">
+                DoubleTapped="VerDetalleFactura_DoubleTapped">
 
                 <controls:DataGrid.Columns>
-                    <controls:DataGridTextColumn Header="N° Factura"
-                                                 Binding="{Binding NumeroDisplay}"
-                                                 Width="140"/>
-                    <controls:DataGridTextColumn Header="Fecha"
-                                                 Binding="{Binding FechaDisplay}"
-                                                 Width="130"/>
-                    <controls:DataGridTextColumn Header="Cliente"
-                                                 Binding="{Binding ClienteDisplay}"
-                                                 Width="*"/>
-                    <controls:DataGridTextColumn Header="Total"
-                                                 Binding="{Binding TotalDisplay}"
-                                                 Width="110"/>
-                    <controls:DataGridTextColumn Header="Estado"
-                                                 Binding="{Binding EstadoDisplay}"
-                                                 Width="90"/>
+                    <controls:DataGridTextColumn Header="Número"   Binding="{Binding Numero}"        Width="110"/>
+                    <controls:DataGridTextColumn Header="Fecha"    Binding="{Binding FechaDisplay}"  Width="130"/>
+                    <controls:DataGridTextColumn Header="Cliente"  Binding="{Binding ClienteDisplay}" Width="*"/>
+                    <controls:DataGridTextColumn Header="Método"   Binding="{Binding MetodoPago}"    Width="120"/>
+                    <controls:DataGridTextColumn Header="Total"    Binding="{Binding TotalDisplay}"  Width="110"/>
+                    <controls:DataGridTextColumn Header="Estado"   Binding="{Binding EstadoDisplay}" Width="90"/>
                 </controls:DataGrid.Columns>
             </controls:DataGrid>
         </Border>

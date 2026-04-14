@@ -3,11 +3,6 @@ using SICAVI.DAL.Data;
 using SICAVI.DAL.Models;
 using System.Net;
 using System.Net.Mail;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using System.IO;
-using QRCoder;
 
 namespace SICAVI.DAL.Services
 {
@@ -20,206 +15,142 @@ namespace SICAVI.DAL.Services
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        private string GenerarNumero()
-        {
-            var ultimo = _context.Facturas
-                .OrderByDescending(f => f.Id)
-                .FirstOrDefault();
+        public List<Factura> ObtenerTodas() =>
+            DalExecutor.Execute(() =>
+                _context.Facturas
+                    .Include(f => f.Cliente)
+                    .Include(f => f.Empleado)
+                    .Include(f => f.Venta)
+                    .Include(f => f.Detalles).ThenInclude(d => d.Producto)
+                    .OrderByDescending(f => f.Fecha)
+                    .ToList(),
+                nameof(ObtenerTodas));
 
-            int numero = (ultimo?.Id ?? 0) + 1;
+        public List<Factura> ObtenerActivas() =>
+            DalExecutor.Execute(() =>
+                _context.Facturas
+                    .Include(f => f.Cliente)
+                    .Include(f => f.Detalles).ThenInclude(d => d.Producto)
+                    .Where(f => !f.Anulada)
+                    .OrderByDescending(f => f.Fecha)
+                    .ToList(),
+                nameof(ObtenerActivas));
 
-            return $"FAC-{DateTime.Now.Year}-{numero:D5}";
-        }
-
-        public Factura CrearDesdeVenta(int ventaId) =>
+        public Factura Registrar(Factura factura) =>
             DalExecutor.Execute(() =>
             {
-                var venta = _context.Ventas
-                    .Include(v => v.Cliente)
-                    .Include(v => v.Detalles)
-                        .ThenInclude(d => d.Producto)
-                    .FirstOrDefault(v => v.Id == ventaId)
-                    ?? throw new Exception("Venta no encontrada");
-
-                var factura = new Factura
-                {
-                    VentaId = venta.Id,
-                    Venta = venta,
-                    Numero = GenerarNumero(),
-                    FechaEmision = DateTime.Now,
-                    Anulada = false
-                };
+                factura.Numero = GenerarNumero();
+                factura.Fecha = DateTime.Now;
+                factura.RecalcularTotales();
 
                 _context.Facturas.Add(factura);
                 _context.SaveChanges();
                 return factura;
-            }, nameof(CrearDesdeVenta));
+            }, nameof(Registrar));
 
-        public List<Factura> ObtenerTodas() =>
-            DalExecutor.Execute(
-                () => _context.Facturas
-                    .Include(f => f.Venta)
-                        .ThenInclude(v => v.Cliente)
-                    .Include(f => f.Venta)
-                        .ThenInclude(v => v.Detalles)
-                            .ThenInclude(d => d.Producto)
-                    .OrderByDescending(f => f.FechaEmision)
-                    .ToList(),
-                nameof(ObtenerTodas));
-
-        public void Anular(Factura factura, string motivo) =>
+        public Factura FacturarDesdeVenta(Venta venta, string? observaciones = null) =>
             DalExecutor.Execute(() =>
             {
-                var f = _context.Facturas.Find(factura.Id)
+                var yaFacturada = _context.Facturas
+                    .Any(f => EF.Property<int?>(f, "VentaId") == venta.Id && !f.Anulada);
+
+                if (yaFacturada)
+                    throw new InvalidOperationException(
+                        $"La venta #{venta.Id} ya tiene una factura activa.");
+
+                var factura = new Factura
+                {
+                    Numero = GenerarNumero(),
+                    Venta = venta,
+                    Cliente = venta.Cliente,
+                    Empleado = venta.Empleado,
+                    Fecha = DateTime.Now,
+                    MetodoPago = venta.MetodoPago,
+                    Observaciones = observaciones
+                };
+
+                foreach (var d in venta.Detalles)
+                {
+                    factura.Detalles.Add(new DetalleFactura
+                    {
+                        Producto = d.Producto,
+                        Cantidad = d.Cantidad,
+                        PrecioUnitario = d.PrecioUnitario
+                    });
+                }
+
+                factura.RecalcularTotales();
+                _context.Facturas.Add(factura);
+                _context.SaveChanges();
+                return factura;
+            }, nameof(FacturarDesdeVenta));
+
+
+        public void Anular(Factura factura) =>
+            DalExecutor.Execute(() =>
+            {
+                var db = _context.Facturas.Find(factura.Id)
                     ?? throw new InvalidOperationException("Factura no encontrada.");
-                f.Anulada = true;
-                f.MotivoAnulacion = motivo;
+
+                db.Anulada = true;
                 _context.SaveChanges();
             }, nameof(Anular));
 
-        public byte[] GenerarPdf(Factura factura)
-        {
-            if (factura.Anulada)
-                throw new InvalidOperationException("No se puede generar PDF de una factura anulada.");
-
-            var logoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "logo.png");
-
-            return Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Margin(30);
-
-                    page.Header().Row(row =>
-                    {
-                        row.ConstantItem(80).Image(logoPath);
-
-                        row.RelativeItem().Column(col =>
-                        {
-                            col.Item().Text("MAI HARDWARE STORE")
-                                .Bold().FontSize(18);
-
-                            col.Item().Text("NIT: 123456789-0");
-                            col.Item().Text("Valledupar, Colombia");
-                            col.Item().Text("Tel: 300 000 0000");
-                        });
-
-                        row.RelativeItem().AlignRight().Column(col =>
-                        {
-                            col.Item().Text($"FACTURA")
-                                .Bold().FontSize(16);
-
-                            col.Item().Text($"N° {factura.Numero}");
-                            col.Item().Text($"Fecha: {factura.FechaDisplay}");
-                        });
-                    });
-
-                    page.Content().Column(col =>
-                    {
-                        col.Spacing(10);
-
-                        col.Item().Container().Padding(5).Border(1).Column(c =>
-                        {
-                            c.Item().Text("Cliente").Bold();
-                            c.Item().Text(factura.ClienteDisplay);
-                        });
-
-                        col.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn(4);
-                                columns.RelativeColumn(1);
-                                columns.RelativeColumn(2);
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Producto").Bold();
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().Text("Cant").Bold();
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().Text("Subtotal").Bold();
-                            });
-
-                            foreach (var d in factura.Venta.Detalles)
-                            {
-                                table.Cell().BorderBottom(1).Padding(5).Text(d.ProductoDisplay);
-                                table.Cell().BorderBottom(1).Padding(5).AlignRight().Text(d.Cantidad.ToString());
-                                table.Cell().BorderBottom(1).Padding(5).AlignRight().Text(d.SubtotalDisplay);
-                            }
-                        });
-
-                        col.Item().AlignRight().Column(t =>
-                        {
-                            t.Item().Text($"Subtotal: {factura.Venta.Subtotal:C0}");
-                            t.Item().Text($"IVA (19%): {factura.Venta.Iva:C0}");
-                            t.Item().Text($"TOTAL: {factura.TotalDisplay}")
-                                .Bold().FontSize(14);
-                        });
-
-                        col.Item().AlignCenter().PaddingTop(10).Height(80).Image(
-                            GenerarQr($"Factura:{factura.Numero}|Total:{factura.TotalDisplay}")
-                        );
-                    });
-
-                    page.Footer().AlignCenter().Column(col =>
-                    {
-                        col.Item().Text("Gracias por su compra").Italic();
-                        col.Item().Text("Este documento es una representación gráfica de la factura");
-                    });
-                });
-            }).GeneratePdf();
-        }
-
-        public string GuardarPdf(Factura factura, string carpeta)
-        {
-            var bytes = GenerarPdf(factura);
-            var ruta = Path.Combine(carpeta, $"{factura.Numero}.pdf");
-            File.WriteAllBytes(ruta, bytes);
-            return ruta;
-        }
-
-        private byte[] GenerarQr(string contenido)
-        {
-            using var qrGenerator = new QRCodeGenerator();
-            using var qrData = qrGenerator.CreateQrCode(contenido, QRCodeGenerator.ECCLevel.Q);
-            var qrCode = new PngByteQRCode(qrData);
-            return qrCode.GetGraphic(5);
-        }
-
-        public async Task EnviarPorCorreoAsync(
+        public void EnviarPorCorreo(
             Factura factura,
+            byte[] pdfBytes,
             ConfiguracionSMTP smtp,
-            string correoRemitente,
-            string correoDestino)
+            string destinatario)
         {
-            if (factura.Anulada)
-                throw new InvalidOperationException("No se puede enviar una factura anulada.");
-
-            if (string.IsNullOrWhiteSpace(correoDestino))
-                throw new InvalidOperationException("El cliente no tiene correo registrado.");
-
-            var pdfBytes = GenerarPdf(factura);
-
-            using var client = new SmtpClient(smtp.Servidor, smtp.Puerto)
+            DalExecutor.Execute(() =>
             {
-                EnableSsl = smtp.UsarSSL,
-                Credentials = new NetworkCredential(smtp.Usuario, smtp.Contrasena)
-            };
+                if (string.IsNullOrWhiteSpace(destinatario))
+                    throw new InvalidOperationException("El correo del destinatario es obligatorio.");
 
-            using var mail = new MailMessage
+                using var client = new SmtpClient(smtp.Servidor, smtp.Puerto)
+                {
+                    EnableSsl = smtp.UsarSSL,
+                    Credentials = new NetworkCredential(smtp.Usuario, smtp.Contrasena)
+                };
+
+                using var adjunto = new Attachment(
+                    new MemoryStream(pdfBytes),
+                    $"Factura_{factura.Numero}.pdf",
+                    "application/pdf");
+
+                var mensaje = new MailMessage
+                {
+                    From = new MailAddress(smtp.Usuario, "Mai Hardware Store"),
+                    Subject = $"Factura {factura.Numero} — Mai Hardware Store",
+                    Body = $"Estimado/a {factura.ClienteDisplay},\n\n" +
+                              $"Adjuntamos su factura {factura.Numero} por un total de {factura.TotalDisplay}.\n\n" +
+                              $"Gracias por su compra.\n\nMai Hardware Store",
+                    IsBodyHtml = false
+                };
+
+                mensaje.To.Add(destinatario);
+                mensaje.Attachments.Add(adjunto);
+
+                client.Send(mensaje);
+            }, nameof(EnviarPorCorreo));
+        }
+
+        private string GenerarNumero()
+        {
+            var ultimo = _context.Facturas
+                .OrderByDescending(f => f.Id)
+                .Select(f => f.Numero)
+                .FirstOrDefault();
+
+            int siguiente = 1;
+            if (!string.IsNullOrEmpty(ultimo) &&
+                ultimo.StartsWith("FAC-") &&
+                int.TryParse(ultimo[4..], out int num))
             {
-                From = new MailAddress(correoRemitente, "Mai Hardware Store"),
-                Subject = $"Factura {factura.Numero} – Mai Hardware Store",
-                Body = $"Adjunto encontrará su factura {factura.Numero}. Gracias por su compra.",
-            };
+                siguiente = num + 1;
+            }
 
-            mail.To.Add(correoDestino);
-            mail.Attachments.Add(new Attachment(
-                new MemoryStream(pdfBytes),
-                $"{factura.Numero}.pdf",
-                "application/pdf"));
-
-            await client.SendMailAsync(mail);
+            return $"FAC-{siguiente:D4}";
         }
     }
 }

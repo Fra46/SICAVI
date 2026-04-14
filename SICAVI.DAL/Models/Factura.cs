@@ -1,35 +1,42 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
+using System.Collections.ObjectModel;
+using static QuestPDF.Helpers.Colors;
 
 namespace SICAVI.DAL.Models
 {
     public partial class Factura : ObservableObject
     {
-        [ObservableProperty]
-        private int id;
+        [ObservableProperty] private int id;
 
-        [ObservableProperty]
-        private int ventaId;
+        [ObservableProperty] private string numero = string.Empty;
 
-        [ObservableProperty]
-        private Venta venta = null!;
+        [ObservableProperty] private Venta? venta;
 
-        [ObservableProperty]
-        private string numero = string.Empty;
+        [ObservableProperty] private Cliente? cliente;
+        [ObservableProperty] private Empleado? empleado;
+        [ObservableProperty] private DateTime fecha;
+        [ObservableProperty] private string metodoPago = "Efectivo";
+        [ObservableProperty] private decimal subtotal;
+        [ObservableProperty] private decimal iva;
+        [ObservableProperty] private decimal total;
+        [ObservableProperty] private bool anulada;
+        [ObservableProperty] private string? observaciones;
 
-        [ObservableProperty]
-        private DateTime fechaEmision;
+        public ObservableCollection<DetalleFactura> Detalles { get; set; } = new();
 
-        [ObservableProperty]
-        private bool anulada;
+        public string ClienteDisplay => Cliente?.NombreCompleto ?? "Consumidor final";
+        public string EmpleadoDisplay => Empleado?.NombreCompleto ?? "—";
+        public string FechaDisplay => Fecha.ToString("dd/MM/yyyy HH:mm");
+        public string TotalDisplay => Total.ToString("C0");
+        public string EstadoDisplay => Anulada ? "Anulada" : "Activa";
 
-        [ObservableProperty]
-        private string? motivoAnulacion;
-
-        public string NumeroDisplay => numero;
-        public string FechaDisplay => fechaEmision.ToString("dd/MM/yyyy HH:mm");
-        public string EstadoDisplay => anulada ? "Anulada" : "Activa";
-        public string TotalDisplay => venta?.TotalDisplay ?? "$0";
-        public string ClienteDisplay => venta?.ClienteDisplay ?? "—";
+        public void RecalcularTotales(decimal tasaIva = 0.19m)
+        {
+            Subtotal = 0;
+            foreach (var d in Detalles) Subtotal += d.Subtotal;
+            Iva = Math.Round(Subtotal * tasaIva, 2);
+            Total = Subtotal + Iva;
+        }
     }
 }

@@ -18,12 +18,13 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 
 namespace SICAVI
 {
     public partial class App : Application
     {
-        private Window? _window;
+        public static Window? MainWindow { get; private set; }
 
         public static IServiceProvider Services { get; private set; }
 
@@ -58,10 +59,10 @@ namespace SICAVI
             }
         }
 
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            _window = new MainWindow();
-            _window.Activate();
+            MainWindow = new MainWindow();
+            MainWindow.Activate();
         }
     }
 }
